@@ -1,40 +1,87 @@
-import shop from '../api/shop'
+// TODO: split actions.
+// TODO: better error handling.
+// TODO: move to redux loop or sagas.
+
 import * as types from '../constants/ActionTypes'
+import config from '../config';
 
-const receiveProducts = products => ({
-  type: types.RECEIVE_PRODUCTS,
-  products: products
-})
+const actions = {
+  error: err => ({
+    type: types.ERROR,
+    err,
+  }),
+  getProducts: products => ({
+    type: types.GET_PRODUCTS,
+    products,
+  }),
+  getCart: cart => ({
+    type: types.GET_CART,
+    cart,
+  }),
+  addProductToCart: productId => ({
+    type: types.ADD_PRODUCT_TO_CART,
+    productId,
+  }),
+  saveCart: () => ({
+    type: types.SAVE_CART,
+  }),
+  checkout: () => ({
+    type: types.CHECKOUT,
+  }),
+};
 
-export const getAllProducts = () => dispatch => {
-  shop.getProducts(products => {
-    dispatch(receiveProducts(products))
-  })
-}
+export const addProductToCart = productId => dispatch => {
+  dispatch(actions.addProductToCart(productId));
+};
 
-const addToCartUnsafe = productId => ({
-  type: types.ADD_TO_CART,
-  productId
-})
-
-export const addToCart = productId => (dispatch, getState) => {
-  if (getState().products.byId[productId].inventory > 0) {
-    dispatch(addToCartUnsafe(productId))
-  }
-}
-
-export const checkout = products => (dispatch, getState) => {
-  const { cart } = getState()
-
-  dispatch({
-    type: types.CHECKOUT_REQUEST
-  })
-  shop.buyProducts(products, () => {
-    dispatch({
-      type: types.CHECKOUT_SUCCESS,
-      cart
+export const getProducts = () => dispatch => {
+  fetch(`${config.apiEndpoint}/products`)
+    .then(res => res.json())
+    .then(res => {
+      dispatch(actions.getProducts(res.products))
     })
-    // Replace the line above with line below to rollback on failure:
-    // dispatch({ type: types.CHECKOUT_FAILURE, cart })
+    .catch(err => {
+      dispatch(actions.error(err));
+    });
+};
+
+export const getCart = email => dispatch => {
+  fetch(`${config.apiEndpoint}/cart/${email}`)
+    .then(res => res.json())
+    .then(res => {
+      dispatch(actions.getCart(res.cart));
+    })
+    .catch(err => {
+      dispatch(actions.error(err));
+    });
+};
+
+export const saveCart = (cart, email) => dispatch => {
+  fetch(`${config.apiEndpoint}/cart/${email}`, {
+    method: 'POST',
+    body: {
+      cart,
+    },
   })
-}
+    .then(res => {
+      dispatch(actions.saveCart());
+    })
+    .catch(err => {
+      dispatch(actions.error(err));
+    });
+};
+
+export const checkout = (cart, email) => dispatch => {
+  fetch(`${config.apiEndpoint}/checkout/${email}`, {
+    method: 'POST',
+    body: {
+      cart,
+    },
+  })
+    .then(res => {
+      dispatch(actions.checkout());
+    })
+    .catch(err => {
+      dispatch(actions.error(err));
+    });
+};

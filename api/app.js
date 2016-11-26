@@ -2,6 +2,11 @@ const express = require('express');
 const app = express();
 const routes = require('./routes/index');
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+});
+
 app.use('/', routes);
 
 app.use((req, res, next) => {

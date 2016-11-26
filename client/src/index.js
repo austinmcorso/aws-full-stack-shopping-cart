@@ -5,7 +5,7 @@ import { Provider } from 'react-redux'
 import createLogger from 'redux-logger'
 import thunk from 'redux-thunk'
 import reducer from './reducers'
-import { getAllProducts } from './actions'
+import { getProducts } from './actions'
 import App from './containers/App'
 
 const middleware = [ thunk ];
@@ -17,13 +17,13 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const store = createStore(
   reducer,
   composeEnhancers(applyMiddleware(...middleware))
-)
+);
 
-store.dispatch(getAllProducts())
+store.dispatch(getProducts());
 
 render(
   <Provider store={store}>
     <App />
   </Provider>,
   document.getElementById('root')
-)
+);

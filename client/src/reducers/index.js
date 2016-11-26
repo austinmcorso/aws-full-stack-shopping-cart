@@ -1,26 +1,42 @@
-import { combineReducers } from 'redux'
-import cart, * as fromCart from './cart'
-import products, * as fromProducts from './products'
+// TODO: Split reducers.
+import * as types from '../constants/ActionTypes'
 
-export default combineReducers({
-  cart,
-  products
-})
+const defaultState = {
+  products: {},
+  cart: {},
+};
 
-const getAddedIds = state => fromCart.getAddedIds(state.cart)
-const getQuantity = (state, id) => fromCart.getQuantity(state.cart, id)
-const getProduct = (state, id) => fromProducts.getProduct(state.products, id)
+const reducer = (state = defaultState, action) => {
+  switch (action.type) {
+    case types.ERROR:
+      console.error(action.err);
+      return state;
+    case types.GET_PRODUCTS:
+      return {
+        ...state,
+        products: Object.assign({}, state.products, action.products),
+      };
+    case types.GET_CART:
+      return {
+        ...state,
+        cart: Object.assign({}, state.cart, action.cart),
+      };
+    case types.ADD_PRODUCT_TO_CART:
+      return {
+        ...state,
+        cart: {
+          ...state.cart,
+          [action.productId]: (state.cart[action.productId] || 0) + 1,
+        },
+      };
+    case types.CHECKOUT:
+      return {
+        ...state,
+        cart: defaultState.cart,
+      };
+    default:
+      return state;
+  };
+};
 
-export const getTotal = state =>
-  getAddedIds(state)
-    .reduce((total, id) =>
-      total + getProduct(state, id).price * getQuantity(state, id),
-      0
-    )
-    .toFixed(2)
-
-export const getCartProducts = state =>
-  getAddedIds(state).map(id => ({
-    ...getProduct(state, id),
-    quantity: getQuantity(state, id)
-  }))
+export default reducer;

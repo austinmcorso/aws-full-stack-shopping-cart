@@ -1,36 +1,30 @@
 import React, { PropTypes } from 'react'
 import { connect } from 'react-redux'
-import { addToCart } from '../actions'
-import { getVisibleProducts } from '../reducers/products'
+import { addProductToCart } from '../actions'
 import ProductItem from '../components/ProductItem'
 import ProductsList from '../components/ProductsList'
 
-const ProductsContainer = ({ products, addToCart }) => (
+const ProductsContainer = ({ products, addProductToCart }) => (
   <ProductsList title="Products">
-    {products.map(product =>
+    {Object.keys(products).map(productId =>
       <ProductItem
-        key={product.id}
-        product={product}
-        onAddToCartClicked={() => addToCart(product.id)} />
+        key={productId}
+        product={products[productId]}
+        onAddToCartClicked={() => addProductToCart(productId)} />
     )}
   </ProductsList>
 )
 
 ProductsContainer.propTypes = {
-  products: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    title: PropTypes.string.isRequired,
-    price: PropTypes.number.isRequired,
-    inventory: PropTypes.number.isRequired
-  })).isRequired,
-  addToCart: PropTypes.func.isRequired
+  products: PropTypes.object.isRequired,
+  addProductToCart: PropTypes.func.isRequired,
 }
 
 const mapStateToProps = state => ({
-  products: getVisibleProducts(state.products)
+  products: state.products,
 })
 
 export default connect(
   mapStateToProps,
-  { addToCart }
+  { addProductToCart }
 )(ProductsContainer)
