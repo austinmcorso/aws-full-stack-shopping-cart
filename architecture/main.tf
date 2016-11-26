@@ -107,6 +107,7 @@ resource "aws_security_group" "db" {
   }
 }
 
+// ELB & ASG
 resource "aws_elb" "web" {
   name = "elb"
   subnets         = ["${aws_subnet.app_1.id}", "${aws_subnet.app_2.id}"]
@@ -127,7 +128,6 @@ resource "aws_elb" "web" {
     interval            = 30
   }
 }
-
 resource "aws_autoscaling_group" "app" {
   name                 = "asg"
   vpc_zone_identifier  = ["${aws_subnet.app_1.id}", "${aws_subnet.app_2.id}"]
@@ -138,10 +138,33 @@ resource "aws_autoscaling_group" "app" {
   launch_configuration = "${aws_launch_configuration.app.name}"
   load_balancers       = ["${aws_elb.web.name}"]
 }
-
 resource "aws_launch_configuration" "app" {
   name          = "lc"
   image_id      = "${lookup(var.aws_amis, var.aws_region)}"
   instance_type = "t2.micro"
   security_groups = ["${aws_security_group.app.id}"]
+}
+
+// S3
+resource "aws_s3_bucket" "client" {
+    bucket = "${var.aws_s3_bucket_name}"
+    acl = "public-read"
+
+    website {
+        index_document = "index.html"
+    }
+}
+resource "aws_s3_bucket_object" "html" {
+    bucket = "${var.aws_s3_bucket_name}"
+    key = "index.html"
+    source = "${path.module}/../client/build/index.html"
+    acl = "public-read"
+    content_type = "text/html"
+}
+resource "aws_s3_bucket_object" "js" {
+    bucket = "${var.aws_s3_bucket_name}"
+    key = "main.js"
+    source = "${path.module}/../client/build/main.js"
+    acl = "public-read"
+    content_type = "application/javascript"
 }
