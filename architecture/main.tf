@@ -90,10 +90,10 @@ resource "aws_security_group" "db" {
   name        = "sg_db"
   vpc_id      = "${aws_vpc.default.id}"
 
-  # HTTP access from the VPC
+  # MySQL access from the VPC
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 3306
+    to_port     = 3306
     protocol    = "tcp"
     cidr_blocks = ["10.0.0.0/16"]
   }
@@ -167,4 +167,24 @@ resource "aws_s3_bucket_object" "js" {
     source = "${path.module}/../client/build/main.js"
     acl = "public-read"
     content_type = "application/javascript"
+}
+
+// RDS
+resource "aws_db_subnet_group" "default" {
+  name        = "db_subnet_group"
+  subnet_ids  = ["${aws_subnet.db_1.id}", "${aws_subnet.db_2.id}"]
+}
+resource "aws_db_instance" "default" {
+  depends_on             = ["aws_security_group.db"]
+  identifier             = "rds"
+  allocated_storage      = "10"
+  engine                 = "mysql"
+  engine_version         = "5.6.27"
+  instance_class         = "db.t2.micro"
+  name                   = "shoppingcart"
+  username               = "admin"
+  password               = "${var.db_pass}"
+  vpc_security_group_ids = ["${aws_security_group.db.id}"]
+  db_subnet_group_name   = "${aws_db_subnet_group.default.id}"
+  multi_az               = "true"
 }
