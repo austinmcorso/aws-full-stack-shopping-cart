@@ -107,13 +107,13 @@ resource "aws_security_group" "db" {
   }
 }
 
-// SSH KEY PAIR
+# SSH KEY PAIR
 resource "aws_key_pair" "auth" {
   key_name   = "ssh_key"
   public_key = "${file(var.public_key_path)}"
 }
 
-// ELB & ASG
+# ELB & ASG
 resource "aws_elb" "web" {
   name = "elb"
   subnets         = ["${aws_subnet.app_1.id}", "${aws_subnet.app_2.id}"]
@@ -153,7 +153,7 @@ resource "aws_launch_configuration" "app" {
   user_data = "${file("ec2-startup.sh")}"
 }
 
-// S3
+# S3
 resource "aws_s3_bucket" "client" {
     bucket = "${var.aws_s3_bucket_name}"
     acl = "public-read"
@@ -177,7 +177,7 @@ resource "aws_s3_bucket_object" "js" {
     content_type = "application/javascript"
 }
 
-// RDS
+# RDS
 resource "aws_db_subnet_group" "default" {
   name        = "db_subnet_group"
   subnet_ids  = ["${aws_subnet.db_1.id}", "${aws_subnet.db_2.id}"]
