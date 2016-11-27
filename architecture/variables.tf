@@ -2,6 +2,7 @@ variable "access_key" {}
 variable "secret_key" {}
 variable "aws_s3_bucket_name" {}
 variable "db_pass" {}
+variable "public_key_path" {}
 
 variable "aws_region" {
   description = "AWS region to launch servers."

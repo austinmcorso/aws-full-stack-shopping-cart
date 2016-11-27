@@ -107,6 +107,12 @@ resource "aws_security_group" "db" {
   }
 }
 
+// SSH KEY PAIR
+resource "aws_key_pair" "auth" {
+  key_name   = "ssh_key"
+  public_key = "${file(var.public_key_path)}"
+}
+
 // ELB & ASG
 resource "aws_elb" "web" {
   name = "elb"
@@ -143,6 +149,8 @@ resource "aws_launch_configuration" "app" {
   image_id      = "${lookup(var.aws_amis, var.aws_region)}"
   instance_type = "t2.micro"
   security_groups = ["${aws_security_group.app.id}"]
+  key_name = "${aws_key_pair.auth.id}"
+  user_data = "${file("ec2-startup.sh")}"
 }
 
 // S3
