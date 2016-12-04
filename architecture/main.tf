@@ -16,25 +16,47 @@ resource "aws_route" "internet_access" {
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = "${aws_internet_gateway.default.id}"
 }
+resource "aws_vpc_endpoint" "secrets" {
+  vpc_id = "${aws_vpc.default.id}"
+  service_name = "com.amazonaws.${var.aws_region}.s3"
+  route_table_ids = ["${aws_vpc.default.main_route_table_id}"]
+  policy = <<EOF
+{
+  "Statement": [
+    {
+      "Action": "*",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Resource": "*",
+      "Principal": "*"
+    }
+  ]
+}
+EOF
+}
 
 # SUBNETS
 resource "aws_subnet" "app_1" {
   vpc_id                  = "${aws_vpc.default.id}"
   cidr_block              = "10.0.1.0/24"
+  availability_zone       = "${var.availability_zone_1}"
   map_public_ip_on_launch = true
 }
 resource "aws_subnet" "app_2" {
   vpc_id                  = "${aws_vpc.default.id}"
   cidr_block              = "10.0.2.0/24"
+  availability_zone       = "${var.availability_zone_2}"
   map_public_ip_on_launch = true
 }
 resource "aws_subnet" "db_1" {
   vpc_id                  = "${aws_vpc.default.id}"
   cidr_block              = "10.0.3.0/24"
+  availability_zone       = "${var.availability_zone_1}"
 }
 resource "aws_subnet" "db_2" {
   vpc_id                  = "${aws_vpc.default.id}"
   cidr_block              = "10.0.4.0/24"
+  availability_zone       = "${var.availability_zone_2}"
 }
 
 # SECURITY GROUPS
@@ -113,6 +135,81 @@ resource "aws_key_pair" "auth" {
   public_key = "${file(var.public_key_path)}"
 }
 
+# S3
+resource "aws_s3_bucket" "client" {
+    bucket = "${var.aws_s3_bucket_name}"
+    acl = "public-read"
+
+    website {
+        index_document = "index.html"
+    }
+}
+resource "aws_s3_bucket" "secrets" {
+    bucket = "${var.aws_s3_bucket_name}-secrets"
+    policy = <<EOF
+{
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::${var.aws_s3_bucket_name}-secrets/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:sourceVpce": "${aws_vpc_endpoint.secrets.id}"
+        }
+      }
+    },
+		{
+			"Effect": "Allow",
+			"Principal": {
+				"AWS": "${var.account_id}"
+			},
+			"Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+			"Resource": "arn:aws:s3:::s3-aws-full-stack-shopping-cart-secrets/*"
+		}
+  ]
+}
+EOF
+}
+resource "aws_s3_bucket_object" "secrets" {
+  bucket = "${var.aws_s3_bucket_name}-secrets"
+  key = "secrets.json"
+  content_type = "application/json"
+  content = <<EOF
+{
+  "db": {
+    "id": "${aws_db_instance.default.id}",
+    "host": "${aws_db_instance.default.address}",
+    "port": "${aws_db_instance.default.port}",
+    "name": "${aws_db_instance.default.name}",
+    "username": "${aws_db_instance.default.username}",
+    "password": "${var.db_pass}"
+  }
+}
+EOF
+}
+
+# RDS
+resource "aws_db_subnet_group" "default" {
+  name        = "db_subnet_group"
+  subnet_ids  = ["${aws_subnet.db_1.id}", "${aws_subnet.db_2.id}"]
+}
+resource "aws_db_instance" "default" {
+  depends_on             = ["aws_security_group.db"]
+  identifier             = "rds"
+  allocated_storage      = "10"
+  engine                 = "mysql"
+  engine_version         = "5.6.27"
+  instance_class         = "db.t2.micro"
+  name                   = "shoppingcart"
+  username               = "admin"
+  password               = "${var.db_pass}"
+  vpc_security_group_ids = ["${aws_security_group.db.id}"]
+  db_subnet_group_name   = "${aws_db_subnet_group.default.id}"
+  multi_az               = "true"
+}
+
 # ELB & ASG
 resource "aws_elb" "web" {
   name = "elb"
@@ -135,6 +232,7 @@ resource "aws_elb" "web" {
   }
 }
 resource "aws_autoscaling_group" "app" {
+  depends_on = ["aws_db_instance.default", "aws_s3_bucket_object.secrets"]
   name                 = "asg"
   vpc_zone_identifier  = ["${aws_subnet.app_1.id}", "${aws_subnet.app_2.id}"]
   max_size             = "4"
@@ -151,48 +249,4 @@ resource "aws_launch_configuration" "app" {
   security_groups = ["${aws_security_group.app.id}"]
   key_name = "${aws_key_pair.auth.id}"
   user_data = "${file("ec2-startup.sh")}"
-}
-
-# S3
-resource "aws_s3_bucket" "client" {
-    bucket = "${var.aws_s3_bucket_name}"
-    acl = "public-read"
-
-    website {
-        index_document = "index.html"
-    }
-}
-resource "aws_s3_bucket_object" "html" {
-    bucket = "${var.aws_s3_bucket_name}"
-    key = "index.html"
-    source = "${path.module}/../client/build/index.html"
-    acl = "public-read"
-    content_type = "text/html"
-}
-resource "aws_s3_bucket_object" "js" {
-    bucket = "${var.aws_s3_bucket_name}"
-    key = "main.js"
-    source = "${path.module}/../client/build/main.js"
-    acl = "public-read"
-    content_type = "application/javascript"
-}
-
-# RDS
-resource "aws_db_subnet_group" "default" {
-  name        = "db_subnet_group"
-  subnet_ids  = ["${aws_subnet.db_1.id}", "${aws_subnet.db_2.id}"]
-}
-resource "aws_db_instance" "default" {
-  depends_on             = ["aws_security_group.db"]
-  identifier             = "rds"
-  allocated_storage      = "10"
-  engine                 = "mysql"
-  engine_version         = "5.6.27"
-  instance_class         = "db.t2.micro"
-  name                   = "shoppingcart"
-  username               = "admin"
-  password               = "${var.db_pass}"
-  vpc_security_group_ids = ["${aws_security_group.db.id}"]
-  db_subnet_group_name   = "${aws_db_subnet_group.default.id}"
-  multi_az               = "true"
 }

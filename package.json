@@ -1,0 +1,14 @@
+{
+  "name": "aws-full-stack-shopping-cart",
+  "version": "1.0.0",
+  "description": "An exercise in utilizing many AWS services (VPC, EC2, ELB, S3, Route53, CloudFront, Dynamo, RDS, SQS, SNS, plus React)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/austinmcorso/aws-full-stack-shopping-cart.git"
+  },
+  "author": "Austin Corso"
+}

@@ -17,11 +17,21 @@ Technologies:
 * React/Redux
 
 Architecture
-* VPC with two private app (east-1b, east-1c) and two private db subnets (east-1b, east-1c)
-* ELB round robin between two backend instances
+* VPC with two private app subnets and two private db subnets, each with unique least-privilege security groups
+* Auto-scaling group with ELB round robin between two backend instances
 * Node.js REST API in EC2 micro instance within private app subnets
 * RDS within two private db subnets
 * Dynamo within two private db subnets
 * React App in S3
+* Credentials stored in private S3 bucket with only access granted via VPC endpoint to EC2
 * SQS + SNS for queueing emailing of todos
 * Route53 DNS failover to Cloudfront static page
+
+Instructions
+1. Build AWS infrastucture
+* npm start
+1. Update client to point to new ELB
+* edit /client/src/config.js to point to ELB DNS entry
+* cd /client; npm run build
+* update index.html JS link to be relative
+* upload /client/build files to S3 and set ACL to public read

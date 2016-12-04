@@ -1,4 +1,5 @@
 variable "access_key" {}
+variable "account_id" {}
 variable "secret_key" {}
 variable "aws_s3_bucket_name" {}
 variable "db_pass" {}
@@ -9,9 +10,12 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "availability_zones" {
-  description = "List of availability zones, use AWS CLI to find your "
-  default     = "us-east-1b,us-east-1c"
+variable "availability_zone_1" {
+  default     = "us-east-1a"
+}
+
+variable "availability_zone_2" {
+  default     = "us-east-1b"
 }
 
 variable "aws_amis" {
