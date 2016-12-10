@@ -24,11 +24,10 @@ https.get(`https://s3.amazonaws.com/${s3Url}-secrets/secrets.json`, (res) => {
     });
 
     // TODO: Optimize and only create/add if needed.
-    connection.query('CREATE TABLE products ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(30) NOT NULL, price DECIMAL(6,2) NOT NULL )', err => console.error);
-    connection.query('INSERT INTO products (title, price) VALUES ('iPad', 399.00)', err => console.error);
-    connection.query('INSERT INTO products (title, price) VALUES ('iPhone', 299.00)', err => console.error);
-    connection.query('INSERT INTO products (title, price) VALUES ('iPod', 108.29)', err => console.error);
-    });
+    connection.query("CREATE TABLE products ( id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY, title VARCHAR(30) NOT NULL, price DECIMAL(6,2) NOT NULL )", err => console.error);
+    connection.query("INSERT INTO products (title, price) VALUES ('iPad', 399.00)", err => console.error);
+    connection.query("INSERT INTO products (title, price) VALUES ('iPhone', 299.00)", err => console.error);
+    connection.query("INSERT INTO products (title, price) VALUES ('iPod', 108.29)", err => console.error);
   });
 }).on('error', (e) => {
   console.log(`Error fetching secrets: ${e}`);
