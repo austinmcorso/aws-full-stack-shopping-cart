@@ -6,23 +6,8 @@ const mysql = require('mysql');
 const AWS = require('aws-sdk');
 
 // initialize DDB w/ credentials fetched via IAM role.
-let ddb;
-http.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/app', (res) => {
-  let body = '';
-
-  res.on('data', (chunk) => {
-    body += chunk;
-  });
-
-  res.on('end', () => {
-    const creds = JSON.parse(body);
-    AWS.config.accessKeyId = creds.AccessKeyId;
-    AWS.config.secretAccessKey = creds.SecretAccessKey,
-    AWS.config.sessionToken = creds.Token;
-    AWS.config.region = 'us-east-1';
-    ddb = new AWS.DynamoDB();
-  });
-});
+AWS.config.region = 'us-east-1';
+const ddb = new AWS.DynamoDB();
 
 // initialize RDS w/ credentials stored in S3.
 const s3Url = `${fs.readFileSync('s3_url.txt', 'utf-8')}`.trim();
