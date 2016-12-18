@@ -3,8 +3,28 @@ const https = require('https');
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql');
+const AWS = require('aws-sdk');
 
-// init
+// initialize DDB w/ credentials fetched via IAM role.
+let ddb;
+http.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/app', (res) => {
+  let body = '';
+
+  res.on('data', (chunk) => {
+    body += chunk;
+  });
+
+  res.on('end', () => {
+    const creds = JSON.parse(body);
+    AWS.config.accessKeyId = creds.AccessKeyId;
+    AWS.config.secretAccessKey = creds.SecretAccessKey,
+    AWS.config.sessionToken = creds.Token;
+    AWS.config.region = 'us-east-1';
+    ddb = new AWS.DynamoDB();
+  });
+});
+
+// initialize RDS w/ credentials stored in S3.
 const s3Url = `${fs.readFileSync('s3_url.txt', 'utf-8')}`.trim();
 let connection;
 https.get(`https://s3.amazonaws.com/${s3Url}-secrets/secrets.json`, (res) => {
@@ -40,12 +60,6 @@ https.get(`https://s3.amazonaws.com/${s3Url}-secrets/secrets.json`, (res) => {
  * @return {Object} json
  */
 router.get('/products', (req, res) => {
-  // const products = [
-  //   {"id": 1, "title": "iPad 4 Mini", "price": 500.01, "inventory": 2},
-  //   {"id": 2, "title": "H&M T-Shirt White", "price": 10.99, "inventory": 10},
-  //   {"id": 3, "title": "Charli XCX - Sucker CD", "price": 19.99, "inventory": 5}
-  // ];
-  // res.json({ products });
   connection.query('SELECT * FROM products', (err, rows, fields) => {
     if (err) {
       console.error(err);
@@ -63,11 +77,22 @@ router.get('/products', (req, res) => {
  * @return {Object} json
  */
 router.get('/cart/:email', (req, res) => {
-  const cart = {
-    0: 1,
-    1: 1,
-  }
-  res.json({ cart });
+  ddb.getItem({
+    Key: {
+      Email: {S: 'test'},
+    },
+  }, (err, data) => {
+    if (err) {
+      console.error(err);
+      res.sendStatus(500);
+    }
+    const cart = {};
+
+    // TODO: error handling, put in abstraction layer.
+    const items = data.Item.Items.M;
+    Object.keys(items).forEach(key => { cart[key] = items[key].N });
+    res.json(cart);
+  });
 })
 
 /**
@@ -77,7 +102,20 @@ router.get('/cart/:email', (req, res) => {
  * @return {Object} json
  */
 router.post('/cart/:email', (req, res) => {
-  res.sendStatus(200);
+  ddb.putItem({
+    Item: {
+      Email: {S: 'test'},
+      Items: {M: {
+        item: {N: '1'},
+      }},
+    },
+  }, (err, data) => {
+    if (err) {
+      console.error(err);
+      res.sendStatus(500);
+    }
+    res.sendStatus(200);
+  });
 })
 
 /**

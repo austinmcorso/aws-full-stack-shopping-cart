@@ -135,6 +135,32 @@ resource "aws_key_pair" "auth" {
   public_key = "${file(var.public_key_path)}"
 }
 
+# IAM
+resource "aws_iam_role" "app" {
+    name = "app"
+    assume_role_policy = <<EOF
+{
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
+resource "aws_iam_instance_profile" "app" {
+    name = "app"
+    roles = ["${aws_iam_role.app.name}"]
+}
+resource "aws_iam_role_policy_attachment" "app" {
+    role = "${aws_iam_role.app.name}"
+    policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
 # S3
 resource "aws_s3_bucket" "client" {
     bucket = "${var.aws_s3_bucket_name}"
@@ -210,6 +236,18 @@ resource "aws_db_instance" "default" {
   multi_az               = "true"
 }
 
+# DYNAMO
+resource "aws_dynamodb_table" "default" {
+    name = "Carts"
+    read_capacity = 5
+    write_capacity = 5
+    hash_key = "Email"
+    attribute {
+      name = "Email"
+      type = "S"
+    }
+}
+
 # ELB & ASG
 resource "aws_elb" "web" {
   name = "elb"
@@ -246,6 +284,7 @@ resource "aws_launch_configuration" "app" {
   name          = "lc"
   image_id      = "${lookup(var.aws_amis, var.aws_region)}"
   instance_type = "t2.micro"
+  iam_instance_profile = "${aws_iam_instance_profile.app.id}"
   security_groups = ["${aws_security_group.app.id}"]
   key_name = "${aws_key_pair.auth.id}"
   user_data = "${file("ec2-startup.sh")}"

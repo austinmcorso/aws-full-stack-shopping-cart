@@ -6,6 +6,6 @@ yum install -y nodejs git mysql
 cd /opt
 git clone https://github.com/austinmcorso/aws-full-stack-shopping-cart.git
 cd /opt/aws-full-stack-shopping-cart/api/
-echo "${S3_SECRETS}" > s3_url.txt
+echo "${S3_URL}" > s3_url.txt
 npm install
 PORT=80 node ./bin/www

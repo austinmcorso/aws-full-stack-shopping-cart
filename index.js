@@ -19,7 +19,7 @@ if (!s3_bucket_name || !s3_bucket_name[1]) {
 replaceInFile(
   'architecture/ec2-startup.template.sh',
   'architecture/ec2-startup.sh',
-  '${S3_SECRETS}',
+  '${S3_URL}',
   s3_bucket_name[1]
 );
 exec('cd architecture && terraform apply', function (error, stdout, stderr) {
