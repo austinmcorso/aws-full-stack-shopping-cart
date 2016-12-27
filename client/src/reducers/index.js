@@ -14,12 +14,12 @@ const reducer = (state = defaultState, action) => {
     case types.GET_PRODUCTS:
       return {
         ...state,
-        products: Object.assign({}, state.products, action.products),
+        products: action.products,
       };
     case types.GET_CART:
       return {
         ...state,
-        cart: Object.assign({}, state.cart, action.cart),
+        cart: action.cart,
       };
     case types.ADD_PRODUCT_TO_CART:
       return {

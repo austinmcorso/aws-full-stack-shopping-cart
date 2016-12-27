@@ -4,6 +4,7 @@
 
 import * as types from '../constants/ActionTypes'
 import config from '../config';
+import _ from 'lodash';
 
 const actions = {
   error: err => ({
@@ -38,7 +39,7 @@ export const getProducts = () => dispatch => {
   fetch(`${config.apiEndpoint}/products`)
     .then(res => res.json())
     .then(res => {
-      dispatch(actions.getProducts(res.products))
+      dispatch(actions.getProducts(_.keyBy(res.products, 'id')))
     })
     .catch(err => {
       dispatch(actions.error(err));
@@ -49,7 +50,7 @@ export const getCart = email => dispatch => {
   fetch(`${config.apiEndpoint}/cart/${email}`)
     .then(res => res.json())
     .then(res => {
-      dispatch(actions.getCart(res.cart));
+      dispatch(actions.getCart(res));
     })
     .catch(err => {
       dispatch(actions.error(err));
@@ -59,9 +60,8 @@ export const getCart = email => dispatch => {
 export const saveCart = (cart, email) => dispatch => {
   fetch(`${config.apiEndpoint}/cart/${email}`, {
     method: 'POST',
-    body: {
-      cart,
-    },
+	  headers: new Headers({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(cart),
   })
     .then(res => {
       dispatch(actions.saveCart());

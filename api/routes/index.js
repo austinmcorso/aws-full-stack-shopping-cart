@@ -62,9 +62,10 @@ router.get('/products', (req, res) => {
  * @return {Object} json
  */
 router.get('/cart/:email', (req, res) => {
+  // TODO: error handling, sanitize user input, put in abstraction layer.
   ddb.getItem({
     Key: {
-      Email: {S: 'test'},
+      Email: {S: req.params.email},
     },
   }, (err, data) => {
     if (err) {
@@ -72,10 +73,8 @@ router.get('/cart/:email', (req, res) => {
       res.sendStatus(500);
     }
     const cart = {};
-
-    // TODO: error handling, put in abstraction layer.
     const items = data.Item.Items.M;
-    Object.keys(items).forEach(key => { cart[key] = items[key].N });
+    Object.keys(items).forEach(key => { cart[key] = parseInt(items[key].N); });
     res.json(cart);
   });
 })
@@ -87,14 +86,18 @@ router.get('/cart/:email', (req, res) => {
  * @return {Object} json
  */
 router.post('/cart/:email', (req, res) => {
-  ddb.putItem({
+  // TODO: error handling, sanitize user input, put in abstraction layer.
+  const dynamoItem = {
     Item: {
-      Email: {S: 'test'},
-      Items: {M: {
-        item: {N: '1'},
-      }},
+      Email: {S: req.params.email},
+      Items: {M: {}},
     },
-  }, (err, data) => {
+  };
+  Object.keys(req.body).forEach(key => {
+    dynamoItem.Item.Items.M[key] = {N: `${req.body[key]}`};
+  });
+
+  ddb.putItem(dynamoItem, (err, data) => {
     if (err) {
       console.error(err);
       res.sendStatus(500);
