@@ -2,6 +2,7 @@
 An exercise in utilizing many AWS services (VPC, EC2, ELB, S3, Route53, CloudFront, Dynamo, RDS, SQS, SNS, plus React)
 
 Technologies:
+
 * VPC w/ private and public subnets
 * Network ACL’s and security groups
 * Internet gateway and NAT
@@ -16,7 +17,8 @@ Technologies:
 * Terraform
 * React/Redux
 
-Architecture
+Architecture:
+
 * VPC with two private app subnets and two private db subnets, each with unique least-privilege security groups
 * Auto-scaling group with ELB round robin between two backend instances
 * Node.js REST API in EC2 micro instance within private app subnets
@@ -27,11 +29,12 @@ Architecture
 * SQS + SNS for queueing emailing of todos
 * Route53 DNS failover to Cloudfront static page
 
-Instructions
+Instructions:
+
 1. Build AWS infrastucture
-* npm start
+  * npm start
 1. Update client to point to new ELB
-* edit /client/src/config.js to point to ELB DNS entry
-* cd /client; npm run build
-* update index.html JS link to be relative
-* upload /client/build files to S3 and set ACL to public read
+  * create /client/src/config.js from example file  to point to ELB DNS entry
+  * cd /client; npm run build
+  * update index.html JS link to be relative
+  * upload /client/build files to S3 and set ACL to public read

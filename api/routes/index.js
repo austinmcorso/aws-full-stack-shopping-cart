@@ -7,7 +7,7 @@ const AWS = require('aws-sdk');
 
 // initialize DDB w/ credentials fetched via IAM role.
 AWS.config.region = 'us-east-1';
-const ddb = new AWS.DynamoDB();
+const ddb = new AWS.DynamoDB({ params: {TableName: 'Carts'} });
 
 // initialize RDS w/ credentials stored in S3.
 const s3Url = `${fs.readFileSync('s3_url.txt', 'utf-8')}`.trim();
@@ -68,7 +68,7 @@ router.get('/cart/:email', (req, res) => {
       Email: {S: req.params.email},
     },
   }, (err, data) => {
-    if (err) {
+    if (err || !data.Item) {
       console.error(err);
       res.sendStatus(500);
     }
